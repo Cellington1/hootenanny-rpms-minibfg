@@ -3,8 +3,8 @@
 %global postgis_micro %(echo %{rpmbuild_version} | awk -F. '{ print $3 }')
 %global postgismajorversion %{postgis_major}.%{postgis_minor}
 %global postgiscurrmajorversion %(echo %{postgismajorversion}|tr -d '.')
-%global postgisprevmajorversion 2.2
-%global postgisprevversion %{postgisprevmajorversion}.6
+%global postgisprevmajorversion 2.3
+%global postgisprev_dotless %(echo %{postgisprevmajorversion}|tr -d '.')
 %global sname hoot-postgis
 
 %{!?utils:%global	utils 1}
@@ -19,12 +19,6 @@
 %{!?sfcgal:%global    sfcgal 0}
 %endif
 
-%ifarch ppc64 ppc64le
-# Define the AT version and path.
-%global atstring	at10.0
-%global atpath		/opt/%{atstring}
-%endif
-
 Summary:	Geographic Information Systems Extensions to PostgreSQL
 Name:		%{sname}%{postgiscurrmajorversion}_%{pg_dotless}
 Version:	%{rpmbuild_version}
@@ -32,20 +26,19 @@ Release:	%{rpmbuild_release}%{?dist}
 License:	GPLv2+
 Group:		Applications/Databases
 Source0:	https://download.osgeo.org/postgis/source/postgis-%{version}.tar.gz
-Source1:	https://download.osgeo.org/postgis/source/postgis-%{postgisprevversion}.tar.gz
 Source2:	https://download.osgeo.org/postgis/docs/postgis-%{version}.pdf
 Source4:	postgis-filter-requires-perl-Pg.sh
 Patch0:		postgis-gdalfpic.patch
 
 URL:		http://www.postgis.net/
 
-BuildRequires:	postgresql%{pg_dotless}-devel
-BuildRequires:	geos-devel >= 3.5.0
-BuildRequires:	pcre-devel
-BuildRequires:	proj-devel
-BuildRequires:	flex
-BuildRequires:	json-c-devel
-BuildRequires:	libxml2-devel
+BuildRequires:  postgresql%{pg_dotless}-devel
+BuildRequires:  geos-devel >= 3.6.2
+BuildRequires:  pcre-devel
+BuildRequires:  proj-devel
+BuildRequires:  flex
+BuildRequires:  json-c-devel
+BuildRequires:  libxml2-devel
 %if %{sfcgal}
 BuildRequires:	SFCGAL-devel
 Requires:	SFCGAL
@@ -54,26 +47,18 @@ Requires:	SFCGAL
 BuildRequires:	hoot-gdal-devel >= 2.1.0
 %endif
 
-# %ifarch ppc64 ppc64le
-# BuildRequires:	advance-toolchain-%{atstring}-devel
-# %endif
-
-Requires:	postgresql%{pg_dotless}, geos >= 3.5.0, proj
-%if 0%{?rhel} && 0%{?rhel} < 6
-Requires:	hdf5 < 1.8.7
-%else
+Requires:	geos >= 3.6.2
 Requires:	hdf5
-%endif
-
-Requires:	hoot-gdal-libs > 2.1.0, json-c, pcre
+Requires:	hoot-gdal-libs >= 2.1.0
+Requires:	json-c
+Requires:	postgresql%{pg_dotless}
+Requires:	postgresql%{pg_dotless}-contrib
+Requires:	proj
+Requires:	pcre
 Requires(post):	%{_sbindir}/update-alternatives
 
-# %ifarch ppc64 ppc64le
-# AutoReq:	0
-# Requires:	advance-toolchain-%{atstring}-runtime
-# %endif
-
 Provides:	%{sname} = %{version}-%{release}
+Obsoletes:	%{sname}%{postgisprev_dotless}_%{pg_dotless}
 Conflicts:	postgis
 Conflicts:	postgis%{postgiscurrmajorversion}_%{pg_dotless}
 
@@ -90,15 +75,12 @@ Summary:	Client tools and their libraries of PostGIS
 Group:		Applications/Databases
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 Provides:	%{sname}-client = %{version}-%{release}
+Obsoletes:	%{sname}%{postgisprev_dotless}_%{pg_dotless}-client
 Conflicts:	postgis-client
 Conflicts:	postgis%{postgiscurrmajorversion}_%{pg_dotless}-client
-%ifarch ppc64 ppc64le
-AutoReq:	0
-Requires:	advance-toolchain-%{atstring}-runtime
-%endif
 
 %description client
-The postgis-client package contains the client tools and their libraries
+The %{name}-client package contains the client tools and their libraries
 of PostGIS.
 
 %package devel
@@ -106,47 +88,38 @@ Summary:	Development headers and libraries for PostGIS
 Group:		Development/Libraries
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 Provides:	%{sname}-devel = %{version}-%{release}
+Obsoletes:	%{sname}%{postgisprev_dotless}_%{pg_dotless}-devel
 Conflicts:	postgis-devel
 Conflicts:	postgis%{postgiscurrmajorversion}_%{pg_dotless}-devel
-%ifarch ppc64 ppc64le
-AutoReq:	0
-Requires:	advance-toolchain-%{atstring}-runtime
-%endif
 
 %description devel
-The postgis-devel package contains the header files and libraries
+The %{name}-devel package contains the header files and libraries
 needed to compile C or C++ applications which will directly interact
 with PostGIS.
 
 %package docs
 Summary:	Extra documentation for PostGIS
 Group:		Applications/Databases
+Obsoletes:	%{sname}%{postgisprev_dotless}_%{pg_dotless}-docs
 Conflicts:	postgis-docs
 Conflicts:	postgis%{postgiscurrmajorversion}_%{pg_dotless}-docs
 
-%ifarch ppc64 ppc64le
-AutoReq:	0
-Requires:	advance-toolchain-%{atstring}-runtime
-%endif
-
 %description docs
-The postgis-docs package includes PDF documentation of PostGIS.
+The %{name}-docs package includes PDF documentation of PostGIS.
 
 %if %utils
 %package utils
 Summary:	The utils for PostGIS
 Group:		Applications/Databases
-Requires:	%{name} = %{version}-%{release}, perl-DBD-Pg
+Requires:	%{name} = %{version}-%{release}
+Requires:	perl-DBD-Pg
 Provides:	%{sname}-utils = %{version}-%{release}
+Obsoletes:	%{sname}%{postgisprev_dotless}_%{pg_dotless}-utils
 Conflicts:	postgis-utils
 Conflicts:	postgis%{postgiscurrmajorversion}_%{pg_dotless}-utils
-%ifarch ppc64 ppc64le
-AutoReq:	0
-Requires:	advance-toolchain-%{atstring}-runtime
-%endif
 
 %description utils
-The postgis-utils package provides the utilities for PostGIS.
+The %{name}-utils package provides the utilities for PostGIS.
 %endif
 
 %global __perl_requires %{SOURCE4}
@@ -158,13 +131,6 @@ The postgis-utils package provides the utilities for PostGIS.
 %patch0 -p0
 
 %build
-
-%ifarch ppc64 ppc64le
-	CFLAGS="${CFLAGS} $(echo %{__global_cflags} | sed 's/-O2/-O3/g') -m64 -mcpu=power8 -mtune=power8 -I%{atpath}/include"
-	CXXFLAGS="${CXXFLAGS} $(echo %{__global_cflags} | sed 's/-O2/-O3/g') -m64 -mcpu=power8 -mtune=power8 -I%{atpath}/include"
-	LDFLAGS="-L%{atpath}/%{_lib}"
-	CC=%{atpath}/bin/gcc; export CC
-%endif
 
 %configure --with-pgconfig=%{pginstdir}/bin/pg_config \
 %if !%raster
@@ -187,28 +153,12 @@ The postgis-utils package provides the utilities for PostGIS.
 %{__make} install DESTDIR=%{buildroot}
 
 %if %utils
-install -d %{buildroot}%{_datadir}/postgis%{postgiscurrmajorversion}_%{pg_dotless}
-install -m 0644 utils/*.pl %{buildroot}%{_datadir}/postgis%{postgiscurrmajorversion}_%{pg_dotless}
+%{__install} -d %{buildroot}%{_datadir}/%{name}
+%{__install} -m 644 utils/*.pl %{buildroot}%{_datadir}/%{name}
 %endif
 
-# PostGIS 2.3 breaks compatibility with 2.2, and we need to ship
-# postgis-2.2.so file along with 2.2 package, so that we can upgrade:
-tar zxf %{SOURCE1}
-cd postgis-%{postgisprevversion}
-%ifarch ppc64 ppc64le
-	CFLAGS="${CFLAGS} $(echo %{__global_cflags} | sed 's/-O2/-O3/g') -m64 -mcpu=power8 -mtune=power8 -I%{atpath}/include"
-	CXXFLAGS="${CXXFLAGS} $(echo %{__global_cflags} | sed 's/-O2/-O3/g') -m64 -mcpu=power8 -mtune=power8 -I%{atpath}/include"
-	LDFLAGS="-L%{atpath}/%{_lib}"
-	CC=%{atpath}/bin/gcc; export CC
-%endif
-
-%configure --with-pgconfig=%{pginstdir}/bin/pg_config --without-raster \
-	 --disable-rpath --libdir=%{pginstdir}/lib
-
-%{__make} LPATH=`%{pginstdir}/bin/pg_config --pkglibdir` shlib="postgis-%{postgisprevmajorversion}.so"
-# Install postgis-2.2.so file manually:
-%{__mkdir} -p %{buildroot}/%{pginstdir}/lib/
-%{__install} -m 0644 postgis/postgis-%{postgisprevmajorversion}.so %{buildroot}/%{pginstdir}/lib/postgis-%{postgisprevmajorversion}.so
+# Create symlink of .so file. PostGIS hackers said that this is safe:
+%{__ln_s} %{pginstdir}/lib/postgis-%{postgismajorversion}.so %{buildroot}%{pginstdir}/lib/postgis-%{postgisprevmajorversion}.so
 
 # Create alternatives entries for common binaries
 %post
@@ -248,7 +198,7 @@ fi
 %if %{sfcgal}
 %{pginstdir}/share/contrib/postgis-%{postgismajorversion}/*sfcgal*.sql
 %endif
-%attr(755,root,root) %{pginstdir}/lib/postgis-%{postgisprevmajorversion}.so
+%{pginstdir}/lib/postgis-%{postgisprevmajorversion}.so
 %attr(755,root,root) %{pginstdir}/lib/postgis-%{postgismajorversion}.so
 %{pginstdir}/share/extension/postgis-*.sql
 %if %{sfcgal}
@@ -292,7 +242,7 @@ fi
 %files utils
 %defattr(-,root,root)
 %doc utils/README
-%attr(755,root,root) %{_datadir}/postgis%{postgiscurrmajorversion}_%{pg_dotless}/*.pl
+%attr(755,root,root) %{_datadir}/%{name}/*.pl
 %endif
 
 %files docs
@@ -300,7 +250,5 @@ fi
 %doc postgis-%{version}.pdf
 
 %changelog
-* Wed Nov 29 2017 Justin Bronn <justin.bronn@digitalglobe.com> - 2.3.5-1
-- Upgrade to 2.3.5.
-* Wed Nov 15 2017 Justin Bronn <justin.bronn@digitalglobe.com> - 2.3.4-1
-- Initial release.
+* Mon Sep 24 2018 Justin Bronn <justin.bronn@radiantsolutions.com> - 2.4.4-1
+- Initial release, version 2.4.4.
