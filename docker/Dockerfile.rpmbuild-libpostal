@@ -12,38 +12,25 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-FROM hootenanny/rpmbuild
+FROM hootenanny/rpmbuild-base:latest
 LABEL \
-  description="Base container for building Hootenanny RPMs" \
+  description="Container for building libpostal" \
   maintainer="justin.bronn@radiantsolutions.com" \
-  name="Hootenanny Base RPM Build Image" \
+  name="Hootenanny libpostal RPM Build Image" \
   vendor="Radiant Solutions"
 
-# Install basic development and RPM authoring tools.
-RUN yum -q -y update && \
-    yum -q -y install \
-        autoconf \
-        autoconf-archive \
-        automake \
-        bzip2 \
-        epel-release \
-        gcc \
-        gcc-c++ \
-        gdb \
-        git \
-        git-core \
-        libtool \
-        make \
-        m4 \
-        redhat-lsb-core \
-        redhat-rpm-config \
-        rpm-build \
-        rpmdevtools \
-        rpmlint \
-        unzip \
-        vim \
-        wget \
-        zip && \
-    yum -q -y install \
-        lcov && \
-    yum -q -y clean all
+ARG libpostal_data=/usr/share/libpostal
+
+USER root
+
+# Install blas and create a data directory in /usr/share for libpostal
+# that's writable by the rpmbuild user.  Unfortunately, it's impossible
+# to test the program without using the global data directory :(
+RUN yum -q -y install atlas-devel && \
+    yum -q -y clean all && \
+    mkdir -p $libpostal_data && \
+    chown $RPMBUILD_USER:$RPMBUILD_USER $libpostal_data
+
+# Use unprivleged RPM build user and work directory by default.
+USER $RPMBUILD_USER
+WORKDIR $RPMBUILD_HOME
